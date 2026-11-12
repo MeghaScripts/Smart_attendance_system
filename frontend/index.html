@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Attendance · Face Recognition Console</title>
+<style>
+  :root{
+    --bg:#f2d9c5; --bg2:#f9e8da; --panel:#fff8f2; --ink:#3a1822; --muted:#8a6468; --line:#e7cbb6;
+    --brand:#7b1e3a; --brand-2:#5a1228; --brand-3:#923050; --brand-ink:#fff4ea; --gold:#c9985c;
+    --ok:#2f7d4f; --warn:#a8650f; --bad:#c0352b;
+    --chip:#f5ddcc; --shadow:0 1px 2px rgba(90,18,40,.08),0 8px 24px rgba(90,18,40,.10);
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html{background:var(--bg)}
+  body{margin:0;font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);
+    background:radial-gradient(1200px 500px at 85% -10%,#fbefe4 0,transparent 60%),linear-gradient(180deg,var(--bg2),var(--bg)) fixed;min-height:100vh}
+  h2,h3,.logo{font-family:Georgia,"Times New Roman",serif}
+
+  /* header */
+  header{background:linear-gradient(135deg,var(--brand-2),var(--brand) 55%,var(--brand-3));color:var(--brand-ink);position:sticky;top:0;z-index:20;
+    box-shadow:0 4px 18px rgba(90,18,40,.35);border-bottom:3px solid var(--gold)}
+  .bar{max-width:1600px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .logo{font-weight:700;font-size:20px;display:flex;align-items:center;gap:10px;letter-spacing:.2px}
+  .logo svg{width:32px;height:32px;flex:0 0 auto}
+  nav{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+  nav button{background:none;border:1px solid transparent;color:rgba(255,244,234,.82);padding:8px 16px;border-radius:99px;cursor:pointer;font:inherit;font-weight:600;transition:.15s}
+  nav button:hover{background:rgba(255,244,234,.14);color:#fff}
+  nav button.active{background:var(--brand-ink);color:var(--brand);border-color:var(--gold)}
+  header .chip{background:rgba(255,244,234,.15);color:var(--brand-ink)}
+  header .chip.ok{background:rgba(140,230,175,.2);color:#c4f5d8}
+  header .chip.bad{background:rgba(255,150,140,.22);color:#ffd2cc}
+
+  main{max-width:1600px;margin:0 auto;padding:26px 24px 70px}
+  section{display:none}
+  section.active{display:block}
+  h2{margin:0 0 4px;font-size:26px;color:var(--brand-2)}
+  p.sub{margin:0 0 20px;color:var(--muted);max-width:900px}
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+  .card h3{margin:0 0 12px;font-size:17px;color:var(--brand)}
+  label{display:block;font-size:12.5px;font-weight:700;margin:10px 0 4px;color:var(--brand-2);letter-spacing:.02em}
+  input[type=text],input[type=password],input[type=url],input[type=number],select{
+    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fffdfb;color:var(--ink);font:inherit}
+  input:focus,select:focus{outline:2px solid var(--brand);outline-offset:-1px;border-color:var(--brand)}
+  input[type=file]{width:100%;font:inherit;color:var(--muted)}
+  input[type=checkbox]{accent-color:var(--brand);width:16px;height:16px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .row>*{flex:1}
+  .row>.auto{flex:0 0 auto}
+  button.btn{background:linear-gradient(180deg,var(--brand-3),var(--brand));color:var(--brand-ink);border:0;padding:10px 18px;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(90,18,40,.25);transition:.15s}
+  button.btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+  button.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+  button.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand);box-shadow:none}
+  button.ghost:hover{background:var(--chip)}
+  button.danger{background:linear-gradient(180deg,#d4483c,var(--bad));color:#fff}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+  .chip{background:var(--chip);color:var(--brand);padding:4px 12px;border-radius:99px;font-size:12.5px;font-weight:700}
+  .chip.ok{background:rgba(47,125,79,.15);color:var(--ok)}
+  .chip.bad{background:rgba(192,53,43,.14);color:var(--bad)}
+  .chip.warn{background:rgba(168,101,15,.16);color:var(--warn)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:6px}
+  .dot.ok{background:#5be08f} .dot.bad{background:#ff6b5e}
+
+  /* session bar */
+  .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;align-items:end}
+  .fields label{margin-top:0}
+  .tog{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;padding:10px 12px;border:1px dashed var(--gold);border-radius:10px;background:#fff3e8;margin:0;color:var(--brand-2);cursor:pointer}
+
+  /* BIG feeds */
+  .feeds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:20px}
+  @media(max-width:1000px){.feeds{grid-template-columns:1fr}}
+  .feed{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow)}
+  .feed-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .feed-head h3{margin:0;font-size:20px;color:var(--brand-2)}
+  .feed-head .sp{flex:1}
+  .live{font-size:12px;font-weight:800;letter-spacing:.08em;padding:3px 11px;border-radius:99px}
+  .live.off{background:var(--chip);color:var(--muted)}
+  .live.on{background:var(--bad);color:#fff;animation:pulse 1.4s infinite}
+  .live.tag{background:var(--brand);color:var(--brand-ink)}
+  @keyframes pulse{50%{opacity:.6}}
+  .stage{position:relative;background:#1f0a11;border-radius:14px;overflow:hidden;aspect-ratio:16/9;min-height:260px;border:3px solid var(--brand-2);
+    box-shadow:inset 0 0 40px rgba(0,0,0,.5),0 6px 18px rgba(90,18,40,.25)}
+  .stage>video,.stage>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;background:#1f0a11}
+  .stage .ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+    color:#e9c9b4;padding:24px;gap:6px;font-size:15px}
+  .stage .ph svg{width:56px;height:56px;opacity:.7;margin-bottom:6px}
+  .stage .ph small{opacity:.7}
+  .stage .fsBtn{position:absolute;right:10px;top:10px;z-index:3;background:rgba(31,10,17,.65);color:#fff4ea;border:1px solid rgba(255,244,234,.4);
+    border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer}
+  .stage .fsBtn:hover{background:var(--brand)}
+  .stage:fullscreen{aspect-ratio:auto;border:0;border-radius:0;width:100vw;height:100vh}
+  .feed-tools{margin-top:14px}
+  .feed-tools .row{margin-top:10px}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:8px}
+  img.preview{width:100%;border-radius:12px;background:var(--bg2);display:block;max-height:520px;object-fit:contain;border:1px solid var(--line)}
+  video.camView{width:100%;border-radius:12px;background:#1f0a11;display:block;object-fit:contain}
+  .stage>video.camView{border-radius:0}
+
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--brand-ink);position:sticky;top:0;background:var(--brand)}
+  tbody tr:nth-child(even){background:#fdf0e5}
+  tbody tr:hover{background:#f8e2d1}
+  .tablewrap{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:12px;margin-top:10px;background:#fffdfb}
+  pre{background:#fdf0e5;border:1px solid var(--line);border-radius:10px;padding:10px;overflow:auto;max-height:260px;font-size:12.5px;margin:8px 0 0;white-space:pre-wrap;word-break:break-word}
+  details summary{cursor:pointer;color:var(--brand);font-size:13.5px;font-weight:700;margin-top:12px}
+  .stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+  .stat div{background:linear-gradient(160deg,#fff3e8,#f7dfcd);border:1px solid var(--line);border-left:5px solid var(--brand);border-radius:12px;padding:12px 16px}
+  .stat b{display:block;font-size:30px;color:var(--brand);font-family:Georgia,serif}
+  .stat span{color:var(--muted);font-size:12.5px;font-weight:600}
+  .toast{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:50}
+  .toast div{background:var(--brand-2);color:var(--brand-ink);padding:11px 16px;border-radius:10px;box-shadow:var(--shadow);max-width:360px;font-size:14px;border-left:4px solid var(--gold)}
+  .toast div.bad{background:var(--bad);color:#fff} .toast div.ok{background:var(--ok);color:#fff}
+  .empty{color:var(--muted);text-align:center;padding:24px}
+  .alert{display:none;background:rgba(168,101,15,.13);color:var(--warn);border:1px solid var(--warn);border-radius:10px;padding:9px 12px;margin:10px 0;font-weight:700;font-size:14px}
+  code{background:var(--chip);padding:1px 7px;border-radius:6px;font-size:12.5px;color:var(--brand-2)}
+  .thumbs{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+  .thumbs figure{margin:0;position:relative;width:84px;height:84px}
+  .thumbs img{width:100%;height:100%;object-fit:cover;border-radius:10px;border:2px solid var(--line)}
+  .thumbs button{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;border:0;background:var(--bad);color:#fff;cursor:pointer;font-size:13px;line-height:22px;padding:0}
+  #camEnroll{max-height:380px;margin-top:12px}
+  @media(max-width:700px){nav{margin-left:0;width:100%}.bar{padding:10px 14px}main{padding:18px 14px 60px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="logo">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#fff4ea"/><circle cx="16" cy="16" r="9" fill="#7b1e3a"/><circle cx="16" cy="16" r="4.5" fill="#c9985c"/><circle cx="18.2" cy="13.8" r="1.5" fill="#fff4ea"/></svg>
+      Smart Attendance
+    </div>
+    <span id="healthPill" class="chip"><span class="dot"></span>Checking…</span>
+    <nav id="nav">
+      <button data-tab="session" class="active">Live Session</button>
+      <button data-tab="photo">Group Photo</button>
+      <button data-tab="enroll">Enroll</button>
+      <button data-tab="records">Records</button>
+      <button data-tab="settings">Settings</button>
+      <button type="button" onclick="window.open(base(cfg.face)+'/review','_blank')">Review ↗</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ LIVE SESSION ============ -->
+<section id="tab-session" class="active">
+  <h2>Live recognition session</h2>
+  <p class="sub">Start a session, then stream webcam frames or use the CCTV camera. Attendance is marked only after the same student is seen in several frames.</p>
+
+  <div class="card">
+    <div class="fields">
+      <div><label>Session ID</label><input type="text" id="sSession"></div>
+      <div><label>Class ID</label><input type="text" id="sClass" placeholder="e.g. 1"></div>
+      <div><label>Teacher ID</label><input type="text" id="sTeacher" placeholder="e.g. T1"></div>
+      <label class="tog"><input type="checkbox" id="sCctv"> Also use CCTV</label>
+    </div>
+    <div class="row" style="margin-top:16px">
+      <button class="btn auto" id="btnStart">Start session</button>
+      <button class="btn danger auto" id="btnEnd" disabled>End session</button>
+      <button class="btn ghost auto" id="btnActive">Active sessions</button>
+      <span id="sessionState" class="chip warn auto">No session</span>
+      <div id="sessionChips" class="chips" style="margin:0"></div>
+    </div>
+    <details><summary>Response</summary><pre id="sessionOut">—</pre></details>
+  </div>
+
+  <div class="feeds">
+    <!-- WEBCAM -->
+    <div class="feed">
+      <div class="feed-head">
+        <h3>📷 Webcam</h3><span class="sp"></span>
+        <span class="live off" id="camBadge">● OFF</span>
+      </div>
+      <div class="stage">
+        <video id="cam" class="camView" autoplay playsinline muted></video>
+        <div class="ph camOff">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          Camera is off<small>Press “Start camera” below</small>
+        </div>
+        <button type="button" class="fsBtn">⛶ Full screen</button>
+      </div>
+      <div class="feed-tools">
+        <div class="row">
+          <button class="btn auto camBtn">Start camera</button>
+          <button class="btn auto" id="btnStream" disabled>Start streaming</button>
+          <button class="btn ghost auto" id="btnOnce" disabled>Send one frame</button>
+        </div>
+        <div class="row">
+          <div class="auto"><label style="margin:0 0 4px">Every (sec)</label>
+            <input type="number" id="interval" value="2" min="0.5" step="0.5" style="width:100px"></div>
+          <div class="auto"><label style="margin:0 0 4px">JPEG quality</label>
+            <input type="number" id="quality" value="0.85" min="0.3" max="1" step="0.05" style="width:100px"></div>
+        </div>
+        <div class="hint" id="streamStat">Camera off.</div>
+      </div>
+    </div>
+
+    <!-- CCTV -->
+    <div class="feed">
+      <div class="feed-head">
+        <h3>🎥 CCTV camera</h3><span class="sp"></span>
+        <span class="live tag">CCTV</span>
+      </div>
+      <div class="stage" id="cctvStage">
+        <img id="cctvImg" class="preview" alt="" style="display:none">
+        <div id="cctvEmpty" class="ph">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h13v8H3z"/><path d="M16 10l5-2v7l-5-2"/><path d="M6 19h7"/></svg>
+          Start a session with CCTV enabled, then load a snapshot or the live stream.
+        </div>
+        <button type="button" class="fsBtn">⛶ Full screen</button>
+      </div>
+      <div class="feed-tools">
+        <div class="row">
+          <button class="btn ghost auto" id="btnSnap">Snapshot</button>
+          <button class="btn ghost auto" id="btnLive">Live stream</button>
+          <button class="btn auto" id="btnNow">Process now</button>
+        </div>
+        <details open><summary>⚙ CCTV connection (RTSP)</summary>
+          <label>RTSP URL</label>
+          <input type="text" id="nvrUrl" placeholder="rtsp://username:password@192.168.1.64:554/stream1" autocomplete="off" spellcheck="false">
+          <p class="hint">Paste your camera's RTSP link, tick “Also use CCTV” above, then press <b>Start session</b>. Use <b>Snapshot</b> or <b>Live stream</b> to check the feed. The URL is sent only to your face module; never stored by this page.</p>
+          <details><summary>Have NVR login instead of an RTSP URL?</summary>
+            <div class="row">
+              <div><label>NVR IP</label><input type="text" id="nvrIp" placeholder="172.16.1.111"></div>
+              <div><label>Channel</label><input type="number" id="nvrCh" value="1" min="1"></div>
+            </div>
+            <div class="row">
+              <div><label>Username</label><input type="text" id="nvrUser" value="admin"></div>
+              <div><label>Password</label><input type="password" id="nvrPw" autocomplete="off"></div>
+            </div>
+            <div class="row">
+              <div><label>HTTP port</label><input type="number" id="nvrHttp" value="9008"></div>
+              <div><label>RTSP port</label><input type="number" id="nvrRtsp" value="554"></div>
+              <div><label>Brand</label><input type="text" id="nvrBrand" value="tvt"></div>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn ghost auto" id="btnCctvTest">Test connection</button>
+              <button class="btn ghost auto" id="btnCctvDiag">Diagnose</button>
+            </div>
+            <pre id="cctvOut" style="display:none"></pre>
+          </details>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <h3>Recognised in this session</h3>
+    <div class="alert" id="liveAlert"></div>
+    <div class="stat">
+      <div><b id="stFrames">0</b><span>webcam frames sent</span></div>
+      <div><b id="stFaces">0</b><span>faces in last frame</span></div>
+      <div><b id="stPeople">0</b><span>students marked</span></div>
+      <div><b id="stErr">0</b><span>errors</span></div>
+    </div>
+    <div class="tablewrap" id="liveTable"><div class="empty">Nothing yet.</div></div>
+    <details><summary>Last response</summary><pre id="frameOut">—</pre></details>
+  </div>
+</section>
+
+<!-- ============ GROUP PHOTO ============ -->
+<section id="tab-photo">
+  <h2>Group-photo attendance</h2>
+  <p class="sub">Upload one photo of the whole class. Use the original, uncompressed image for best accuracy.</p>
+  <div class="grid g2">
+    <div class="card">
+      <div class="row">
+        <div><label>Session ID</label><input type="text" id="pSession"></div>
+        <div><label>Class ID</label><input type="text" id="pClass" placeholder="e.g. 1"></div>
+      </div>
+      <label>Photo</label>
+      <input type="file" id="pFile" accept="image/*">
+      <div class="row" style="margin-top:14px">
+        <button class="btn auto" id="btnPhoto">Process photo</button>
+        <span id="photoState" class="chip auto" style="display:none"></span>
+      </div>
+      <details><summary>Raw response</summary><pre id="photoOut">—</pre></details>
+    </div>
+    <div class="card">
+      <h3>Preview</h3>
+      <img id="pPreview" class="preview" alt="" style="display:none">
+      <div id="pEmpty" class="empty">No photo selected.</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px">
+    <h3>Result</h3>
+    <div class="alert" id="photoAlert"></div>
+    <div id="photoResult"><div class="empty">Run a photo to see matches.</div></div>
+  </div>
+</section>
+
+<!-- ============ ENROLL ============ -->
+<section id="tab-enroll">
+  <h2>Enroll students</h2>
+  <p class="sub">Each student needs <b>4–10 real photos</b> (different lighting, angle, glasses on/off). The student must already exist in the <code>students</code> table. Each enrollment retrains the class classifier.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Single student</h3>
+      <label>Student ID</label><input type="text" id="eId" placeholder="STU001">
+      <label>Add photos from files</label><input type="file" id="eFiles" accept="image/*" multiple>
+      <div class="row" style="margin-top:12px">
+        <button class="btn ghost auto camBtn">Start camera</button>
+        <button class="btn ghost auto" id="btnShot" disabled>Capture photo</button>
+      </div>
+      <video id="camEnroll" class="camView" autoplay playsinline muted></video>
+      <div class="thumbs" id="eThumbs"></div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn auto" id="btnEnroll">Enroll</button>
+        <button class="btn ghost auto" id="btnClearShots">Clear photos</button>
+        <span class="chip auto" id="eCount">0 photos</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Bulk enroll (folder)</h3>
+      <p class="hint" style="margin-top:0">Pick a folder that contains one sub-folder per student, named by student ID:<br><code>photos/STU001/a.jpg, b.jpg …</code> <code>photos/STU002/…</code></p>
+      <input type="file" id="bFolder" webkitdirectory multiple>
+      <div id="bSummary" class="hint"></div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn auto" id="btnBulk" disabled>Enroll all</button>
+        <span class="chip auto" id="bProg" style="display:none"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <h3>Class status</h3>
+    <div class="row">
+      <div><label>Class ID</label><input type="text" id="cClass" placeholder="e.g. 1"></div>
+      <button class="btn ghost auto" id="btnCount">Enrolled count</button>
+      <button class="btn ghost auto" id="btnTrainStatus">Classifier status</button>
+      <button class="btn ghost auto" id="btnRetrain">Retrain</button>
+    </div>
+    <div id="cOut"></div>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <h3>Enrollment log</h3>
+    <div class="tablewrap" id="enrollLog"><div class="empty">No enrollments yet.</div></div>
+  </div>
+</section>
+
+<!-- ============ RECORDS ============ -->
+<section id="tab-records">
+  <h2>Attendance records</h2>
+  <p class="sub">The face module's local audit log (<code>/face/attendance-log</code>).</p>
+  <div class="card">
+    <div class="row">
+      <input type="text" id="rClass" placeholder="Class ID (optional)">
+      <input type="text" id="rSessionF" placeholder="Session ID (optional)">
+      <input type="text" id="rSearch" placeholder="Filter text…">
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn auto" id="btnLoad">Refresh</button>
+      <button class="btn ghost auto" id="btnCsv">Export CSV</button>
+      <label class="auto" style="display:flex;gap:6px;align-items:center;margin:0;font-weight:600">
+        <input type="checkbox" id="rAuto"> Auto-refresh 5s</label>
+    </div>
+    <div class="chips" id="rCount"></div>
+    <div class="tablewrap" id="recTable"><div class="empty">Click Refresh.</div></div>
+  </div>
+</section>
+
+<!-- ============ SETTINGS ============ -->
+<section id="tab-settings">
+  <h2>Settings</h2>
+  <p class="sub">Saved in your browser only.</p>
+  <div class="card" style="max-width:620px">
+    <label>Face module URL</label>
+    <input type="url" id="cfgFace" placeholder="http://localhost:8001">
+    <p class="hint">When this page is opened from the module itself (<code>/ui</code>) this is filled in automatically. If you host the page elsewhere, the page's origin must be listed in <code>ALLOWED_ORIGINS</code> in <code>.env</code>.</p>
+    <div class="row" style="margin-top:16px">
+      <button class="btn auto" id="btnSave">Save</button>
+      <button class="btn ghost auto" id="btnPing">Test connection</button>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==========================================================
+   Smart Attendance Console — single-file frontend
+   Talks to the Flask face module:
+     GET  /health
+     POST /face/enroll               multipart: student_id, photo (4–10 files)
+     POST /face/session/start        json: session_id, class_id, teacher_id, use_cctv, nvr_*, rtsp_url
+     POST /face/session/end          json: class_id
+     GET  /face/sessions/active
+     POST /face/process-frame        json: class_id, session_id, frame_b64
+     POST /face/photo-attendance     multipart: session_id, class_id, photo
+     GET  /face/cctv/snapshot/<cls>  · /face/cctv/stream/<cls>
+     POST /face/cctv/process-now/<cls> · /face/cctv/test · /face/cctv/diagnose
+     GET  /face/students/<cls>/enrolled-count
+     GET  /face/train/<cls>/status · POST /face/train/<cls>
+     GET  /face/attendance-log
+   ========================================================== */
+
+const $ = s => document.querySelector(s);
+const served = location.protocol.startsWith('http') && location.pathname.replace(/\/+$/,'') === '/ui';
+const DEFAULT_FACE = served ? location.origin : 'http://localhost:8001';
+let cfg = Object.assign({ face: DEFAULT_FACE }, JSON.parse(localStorage.getItem('sa_cfg') || '{}'));
+if (served) cfg.face = location.origin;
+
+/* ---------- helpers ---------- */
+function toast(msg, kind=''){
+  const d = document.createElement('div'); d.className = kind; d.textContent = msg;
+  $('#toast').appendChild(d); setTimeout(()=>d.remove(), 5000);
+}
+const base = u => u.replace(/\/+$/,'');
+const rid = () => 'sess-' + Date.now().toString(36);
+const esc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const enc = encodeURIComponent;
+const show = (el, text) => { el.textContent = text || ''; el.style.display = text ? 'block' : 'none'; };
+
+async function api(path, opts={}){
+  const url = base(cfg.face) + path;
+  let res;
+  try { res = await fetch(url, opts); }
+  catch(e){ throw new Error('Cannot reach ' + base(cfg.face) + ' — is the module running (and is this origin in ALLOWED_ORIGINS)?'); }
+  const text = await res.text();
+  let data; try { data = JSON.parse(text); } catch { data = { raw: text }; }
+  if(!res.ok){
+    const m = (data && (data.detail || data.error || data.message)) || ('HTTP ' + res.status);
+    const err = new Error(m); err.data = data; err.status = res.status; throw err;
+  }
+  return data;
+}
+const getJ  = p => api(p);
+const postJ = (p, body={}) => api(p, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+const postF = (p, fd) => api(p, { method:'POST', body: fd });
+
+function fmtCell(col, v){
+  if(v === null || v === undefined) return '';
+  if(/^backend_synced$/.test(col)) return v ? '✓' : '✗';
+  if(/^confidence$/.test(col) && typeof v === 'number') return v.toFixed(1) + '%';
+  if(/prob/.test(col) && typeof v === 'number') return (v*100).toFixed(1) + '%';
+  if(typeof v === 'object') return '<code>'+esc(JSON.stringify(v))+'</code>';
+  return esc(v);
+}
+function tableHTML(rows, emptyMsg='No rows.'){
+  rows = rows.map(r => (r && typeof r === 'object') ? r : { value: r });
+  if(!rows.length) return '<div class="empty">'+esc(emptyMsg)+'</div>';
+  const cols = [...new Set(rows.flatMap(r => Object.keys(r)))];
+  return '<table><thead><tr>'+cols.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+
+    rows.map(r=>'<tr>'+cols.map(c=>'<td>'+fmtCell(c, r[c])+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+}
+function chipsHTML(obj, skip=[]){
+  return '<div class="chips">' + Object.entries(obj||{})
+    .filter(([k,v]) => !skip.includes(k) && (v===null || ['string','number','boolean'].includes(typeof v)))
+    .map(([k,v]) => {
+      let cls = '';
+      if(v === true) cls = 'ok'; else if(v === false) cls = 'bad';
+      return '<span class="chip '+cls+'">'+esc(k)+': '+esc(v)+'</span>';
+    }).join('') + '</div>';
+}
+
+/* ---------- navigation ---------- */
+$('#nav').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b || !b.dataset.tab) return;
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active', x===b));
+  document.querySelectorAll('section').forEach(s=>s.classList.toggle('active', s.id === 'tab-'+b.dataset.tab));
+  if(b.dataset.tab === 'records') loadRecords();
+});
+
+/* ---------- settings + health ---------- */
+$('#cfgFace').value = cfg.face;
+$('#cfgFace').disabled = served;
+$('#btnSave').onclick = () => {
+  cfg.face = $('#cfgFace').value.trim() || DEFAULT_FACE;
+  localStorage.setItem('sa_cfg', JSON.stringify(cfg));
+  toast('Settings saved','ok'); ping();
+};
+$('#btnPing').onclick = async () => { (await ping()) ? toast('Module is reachable','ok') : toast('Cannot reach the module','bad'); };
+async function ping(){
+  const pill = $('#healthPill');
+  try{
+    const r = await fetch(base(cfg.face) + '/health');
+    if(!r.ok) throw 0;
+    pill.className = 'chip ok'; pill.innerHTML = '<span class="dot ok"></span>Module online'; return true;
+  }catch(e){
+    pill.className = 'chip bad'; pill.innerHTML = '<span class="dot bad"></span>Module unreachable'; return false;
+  }
+}
+
+/* ---------- shared camera ---------- */
+const cam = {
+  stream: null,
+  hidden: Object.assign(document.createElement('video'), { muted:true, playsInline:true }), // capture source
+  async start(){
+    this.stream = await navigator.mediaDevices.getUserMedia({ video:{ width:{ideal:1920}, height:{ideal:1080}, facingMode:'user' }, audio:false });
+    document.querySelectorAll('video.camView').forEach(v => v.srcObject = this.stream);
+    this.hidden.srcObject = this.stream; await this.hidden.play().catch(()=>{});
+  },
+  stop(){
+    if(this.stream) this.stream.getTracks().forEach(t=>t.stop());
+    this.stream = null; this.hidden.srcObject = null;
+    document.querySelectorAll('video.camView').forEach(v => v.srcObject = null);
+  },
+  ready(){ return !!this.stream && this.hidden.videoWidth > 0; },
+  grab(type='image/jpeg', q=0.85){
+    const c = document.createElement('canvas'); c.width = this.hidden.videoWidth; c.height = this.hidden.videoHeight;
+    c.getContext('2d').drawImage(this.hidden, 0, 0);
+    return c;
+  }
+};
+function syncCamUI(){
+  const on = !!cam.stream;
+  document.querySelectorAll('.camBtn').forEach(b => b.textContent = on ? 'Stop camera' : 'Start camera');
+  $('#btnStream').disabled = !(on && session); $('#btnOnce').disabled = !(on && session);
+  $('#btnShot').disabled = !on;
+  $('#streamStat').textContent = on ? ('Camera on.' + (session ? '' : ' Start a session to send frames.')) : 'Camera off.';
+  if(!on) stopStream();
+  const cb = $('#camBadge'); if(cb){ cb.className = 'live ' + (on ? 'on' : 'off'); cb.textContent = on ? '● LIVE' : '● OFF'; }
+  document.querySelectorAll('.camOff').forEach(p => p.style.display = on ? 'none' : 'flex');
+}
+document.querySelectorAll('.camBtn').forEach(b => b.onclick = async () => {
+  try{ cam.stream ? cam.stop() : await cam.start(); }
+  catch(e){ toast('Camera error: ' + e.message, 'bad'); }
+  syncCamUI();
+});
+window.addEventListener('beforeunload', () => cam.stop());
+
+/* ---------- live session ---------- */
+let session = null, timer = null, busy = false, frames = 0, errors = 0;
+const marked = new Map(); // student_id -> row
+$('#sSession').value = rid();
+
+function setAlert(el, text){ el.textContent = text || ''; el.style.display = text ? 'block' : 'none'; }
+function mergeRecognitions(out){
+  (out.new_recognitions || []).forEach(r => marked.set(r.student_id, r));
+  $('#stPeople').textContent = marked.size;
+  $('#liveTable').innerHTML = tableHTML([...marked.values()], 'Nothing yet.');
+  if(typeof out.faces_detected === 'number') $('#stFaces').textContent = out.faces_detected;
+  setAlert($('#liveAlert'), out.alert);
+}
+
+$('#btnStart').onclick = async () => {
+  const body = {
+    session_id: $('#sSession').value.trim(),
+    class_id: $('#sClass').value.trim(),
+    teacher_id: $('#sTeacher').value.trim(),
+    use_cctv: $('#sCctv').checked
+  };
+  if(!body.session_id || !body.class_id || !body.teacher_id) return toast('Session ID, Class ID and Teacher ID are required','bad');
+  if(body.use_cctv){
+    Object.assign(body, nvrBody(false));
+    if(!body.rtsp_url && !body.nvr_ip) return toast('Paste the CCTV RTSP URL (or untick “Also use CCTV”)','bad');
+  }
+  $('#btnStart').disabled = true;
+  try{
+    const out = await postJ('/face/session/start', body);
+    session = { id: body.session_id, class_id: body.class_id };
+    marked.clear(); frames = errors = 0; $('#stFrames').textContent = 0; $('#stErr').textContent = 0; mergeRecognitions({});
+    $('#sessionOut').textContent = JSON.stringify(out, null, 2);
+    $('#sessionChips').innerHTML = chipsHTML({ enrolled_students: out.enrolled_students, cctv_active: out.cctv_active, cctv_mode: out.cctv_mode });
+    $('#sessionState').className = 'chip ok auto'; $('#sessionState').textContent = 'Active · ' + session.id;
+    $('#btnEnd').disabled = false;
+    $('#pSession').value = session.id; $('#pClass').value = session.class_id; $('#cClass').value ||= session.class_id;
+    syncCamUI();
+    toast(out.message || 'Session started', out.enrolled_students ? 'ok' : '');
+    if(!out.enrolled_students) toast('No students are enrolled in this class yet.','bad');
+  }catch(e){
+    $('#sessionOut').textContent = JSON.stringify(e.data || {detail:e.message}, null, 2);
+    toast(e.message,'bad');
+  }finally{ $('#btnStart').disabled = false; }
+};
+
+$('#btnEnd').onclick = async () => {
+  stopStream();
+  try{ await postJ('/face/session/end', { class_id: session.class_id }); toast('Session ended','ok'); }
+  catch(e){ toast(e.message,'bad'); }
+  stopLive();
+  session = null; $('#sessionChips').innerHTML = '';
+  $('#sessionState').className = 'chip warn auto'; $('#sessionState').textContent = 'No session';
+  $('#btnEnd').disabled = true; $('#sSession').value = rid(); syncCamUI();
+};
+
+$('#btnActive').onclick = async () => {
+  try{
+    const out = await getJ('/face/sessions/active');
+    const rows = Array.isArray(out) ? out : Object.values(out || {});
+    $('#sessionOut').textContent = JSON.stringify(out, null, 2);
+    toast(rows.length ? (rows.length + ' active session(s) — see Response') : 'No active sessions');
+  }catch(e){ toast(e.message,'bad'); }
+};
+
+/* webcam streaming */
+async function sendFrame(){
+  if(busy || !session || !cam.ready()) return;
+  busy = true;
+  try{
+    const b64 = cam.grab().toDataURL('image/jpeg', parseFloat($('#quality').value) || 0.85);
+    const out = await postJ('/face/process-frame', { class_id: session.class_id, session_id: session.id, frame_b64: b64 });
+    frames++; $('#frameOut').textContent = JSON.stringify(out, null, 2); mergeRecognitions(out);
+  }catch(e){
+    errors++; $('#frameOut').textContent = JSON.stringify(e.data || {detail:e.message}, null, 2);
+    $('#streamStat').textContent = 'Last error: ' + e.message;
+    if(e.status === 400 && /No active recognition session/i.test(e.message)) sessionLost();
+  }finally{ busy = false; $('#stFrames').textContent = frames; $('#stErr').textContent = errors; }
+}
+/* The server keeps sessions in memory: after a restart (or an End from another tab)
+   it no longer knows this session, so stop streaming instead of sending frames forever. */
+function sessionLost(){
+  stopStream();
+  session = null;
+  $('#sessionChips').innerHTML = '';
+  $('#sessionState').className = 'chip bad auto'; $('#sessionState').textContent = 'Session lost';
+  $('#btnEnd').disabled = true;
+  syncCamUI();
+  $('#streamStat').textContent = 'Session not found on the server (it was probably restarted). Click "Start session" again.';
+  toast('The server no longer has this session — it was probably restarted. Start the session again.', 'bad');
+}
+function startStream(){
+  const ms = Math.max(500, (parseFloat($('#interval').value)||2) * 1000);
+  timer = setInterval(sendFrame, ms); sendFrame();
+  $('#btnStream').textContent = 'Stop streaming'; $('#streamStat').textContent = 'Streaming every ' + ms/1000 + 's…';
+}
+function stopStream(){
+  if(timer){ clearInterval(timer); timer = null; }
+  $('#btnStream').textContent = 'Start streaming';
+}
+$('#btnStream').onclick = () => timer ? stopStream() : startStream();
+$('#btnOnce').onclick = sendFrame;
+
+/* CCTV */
+function nvrBody(requirePw=true){
+  const b = {
+    nvr_ip: $('#nvrIp').value.trim(), nvr_channel: parseInt($('#nvrCh').value)||1,
+    nvr_username: $('#nvrUser').value.trim() || 'admin', nvr_password: $('#nvrPw').value,
+    nvr_http_port: parseInt($('#nvrHttp').value)||9008, nvr_rtsp_port: parseInt($('#nvrRtsp').value)||554,
+    nvr_brand: $('#nvrBrand').value.trim() || 'tvt'
+  };
+  const url = $('#nvrUrl').value.trim(); if(url) return { rtsp_url: url };   // RTSP URL is all that's needed
+  return b;
+}
+const cctvClass = () => (session && session.class_id) || $('#sClass').value.trim();
+function showCctvImg(src){
+  const img = $('#cctvImg'); img.style.display = 'block'; $('#cctvEmpty').style.display = 'none';
+  img.onerror = () => { img.style.display = 'none'; $('#cctvEmpty').style.display = 'block'; $('#cctvEmpty').textContent = 'No frame available (is a CCTV session running for this class?).'; };
+  img.src = src;
+}
+function stopLive(){ const i = $('#cctvImg'); if(i.dataset.live){ i.removeAttribute('src'); delete i.dataset.live; $('#btnLive').textContent = 'Live stream'; } }
+$('#btnSnap').onclick = () => { const c = cctvClass(); if(!c) return toast('Enter a Class ID','bad'); stopLive(); showCctvImg(base(cfg.face)+'/face/cctv/snapshot/'+enc(c)+'?t='+Date.now()); };
+$('#btnLive').onclick = () => {
+  const i = $('#cctvImg'), c = cctvClass(); if(!c) return toast('Enter a Class ID','bad');
+  if(i.dataset.live){ stopLive(); return; }
+  i.dataset.live = '1'; $('#btnLive').textContent = 'Stop live'; showCctvImg(base(cfg.face)+'/face/cctv/stream/'+enc(c));
+};
+$('#btnNow').onclick = async () => {
+  const c = cctvClass(); if(!c) return toast('Enter a Class ID','bad');
+  $('#btnNow').disabled = true;
+  try{
+    const out = await postJ('/face/cctv/process-now/'+enc(c));
+    $('#frameOut').textContent = JSON.stringify(out, null, 2); mergeRecognitions(out);
+    toast(out.error || ((out.faces_detected||0) + ' face(s), ' + (out.new_recognitions||[]).length + ' new'), out.error ? 'bad' : 'ok');
+  }catch(e){ toast(e.message,'bad'); }
+  finally{ $('#btnNow').disabled = false; }
+};
+async function cctvProbe(path, btn){
+  const b = nvrBody(); if(!b.nvr_ip || !b.nvr_password) return toast('NVR IP and password are required','bad');
+  btn.disabled = true; show($('#cctvOut'), 'Working… (this can take a while)');
+  try{ const out = await postJ(path, b); show($('#cctvOut'), JSON.stringify(out, null, 2)); }
+  catch(e){ show($('#cctvOut'), e.message); }
+  finally{ btn.disabled = false; }
+}
+$('#btnCctvTest').onclick = e => cctvProbe('/face/cctv/test', e.target);
+$('#btnCctvDiag').onclick = e => cctvProbe('/face/cctv/diagnose', e.target);
+
+/* ---------- group photo ---------- */
+$('#pFile').onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  $('#pPreview').src = URL.createObjectURL(f); $('#pPreview').style.display = 'block'; $('#pEmpty').style.display = 'none';
+};
+$('#btnPhoto').onclick = async () => {
+  const f = $('#pFile').files[0], sid = $('#pSession').value.trim(), cid = $('#pClass').value.trim();
+  if(!f || !sid || !cid) return toast('Session ID, Class ID and a photo are required','bad');
+  const fd = new FormData(); fd.append('session_id', sid); fd.append('class_id', cid); fd.append('photo', f);
+  const st = $('#photoState'); st.style.display='inline-block'; st.className='chip warn auto'; st.textContent='Processing…';
+  $('#btnPhoto').disabled = true;
+  try{
+    const out = await postF('/face/photo-attendance', fd);
+    $('#photoOut').textContent = JSON.stringify(out, null, 2);
+    setAlert($('#photoAlert'), out.alert);
+    $('#photoResult').innerHTML =
+      '<div class="stat"><div><b>'+(out.total_faces_detected ?? 0)+'</b><span>faces detected</span></div>'+
+      '<div><b>'+(out.matched||[]).length+'</b><span>students matched</span></div>'+
+      '<div><b>'+(out.unmatched_faces ?? 0)+'</b><span>unrecognised</span></div></div>'+
+      '<div class="tablewrap">'+tableHTML(out.matched||[], 'No students matched.')+'</div>';
+    st.className='chip ok auto'; st.textContent='Done'; toast('Photo processed','ok');
+  }catch(e){
+    $('#photoOut').textContent = JSON.stringify(e.data || {detail:e.message}, null, 2);
+    st.className='chip bad auto'; st.textContent='Failed'; toast(e.message,'bad');
+  }finally{ $('#btnPhoto').disabled = false; }
+};
+
+/* ---------- enroll ---------- */
+let shots = []; // File/Blob objects with .name
+function renderShots(){
+  $('#eThumbs').innerHTML = '';
+  shots.forEach((f,i) => {
+    const fig = document.createElement('figure'), img = document.createElement('img'), x = document.createElement('button');
+    img.src = f._url || (f._url = URL.createObjectURL(f)); x.textContent = '×'; x.title = 'Remove';
+    x.onclick = () => { shots.splice(i,1); renderShots(); };
+    fig.append(img, x); $('#eThumbs').appendChild(fig);
+  });
+  const n = shots.length, ok = n >= 4 && n <= 10;
+  $('#eCount').className = 'chip auto ' + (ok ? 'ok' : 'warn'); $('#eCount').textContent = n + ' photo' + (n===1?'':'s') + ' (need 4–10)';
+}
+$('#eFiles').onchange = e => { shots.push(...e.target.files); e.target.value = ''; renderShots(); };
+$('#btnShot').onclick = () => {
+  if(!cam.ready()) return toast('Camera not ready','bad');
+  cam.grab().toBlob(b => {
+    shots.push(new File([b], 'capture-' + Date.now() + '.jpg', { type:'image/jpeg' })); renderShots();
+  }, 'image/jpeg', 0.92);
+};
+$('#btnClearShots').onclick = () => { shots = []; renderShots(); };
+renderShots();
+
+const enrollRows = [];
+function logEnroll(id, status, detail){
+  enrollRows.unshift({ student_id:id, status, detail, time: new Date().toLocaleTimeString() });
+  $('#enrollLog').innerHTML = tableHTML(enrollRows);
+}
+async function enrollOne(id, files){
+  const fd = new FormData(); fd.append('student_id', id); files.forEach(f => fd.append('photo', f, f.name));
+  try{
+    const out = await postF('/face/enroll', fd);
+    const t = out.classifier && out.classifier.trained ? 'classifier retrained' : 'saved';
+    logEnroll(id, 'enrolled', t + (out.embeddings_stored ? ' · ' + out.embeddings_stored + ' embeddings' : ''));
+    return { ok:true, out };
+  }catch(e){
+    const d = e.data || {};
+    logEnroll(id, d.blocked ? 'blocked' : 'failed', d.detail || d.warning || d.reason || e.message);
+    return { ok:false, err:e };
+  }
+}
+$('#btnEnroll').onclick = async () => {
+  const id = $('#eId').value.trim();
+  if(!id) return toast('Enter a student ID','bad');
+  if(shots.length < 4 || shots.length > 10) return toast('Add between 4 and 10 photos','bad');
+  $('#btnEnroll').disabled = true;
+  const r = await enrollOne(id, shots);
+  if(r.ok){ toast('Enrolled ' + id, 'ok'); shots = []; renderShots(); }
+  else toast(r.err.message, 'bad');
+  $('#btnEnroll').disabled = false;
+};
+
+let groups = {};
+$('#bFolder').onchange = e => {
+  groups = {};
+  [...e.target.files].filter(f => f.type.startsWith('image/')).forEach(f => {
+    const parts = (f.webkitRelativePath || '').split('/');
+    if(parts.length < 2) return;
+    const id = parts[parts.length - 2];
+    (groups[id] ||= []).push(f);
+  });
+  const ids = Object.keys(groups), ok = ids.filter(i => groups[i].length >= 4);
+  $('#bSummary').textContent = ids.length ? (ids.length + ' student folder(s); ' + ok.length + ' with 4+ photos' + (ids.length-ok.length ? ' — the rest will be skipped' : '')) : 'No sub-folders with images found.';
+  $('#btnBulk').disabled = !ok.length;
+};
+$('#btnBulk').onclick = async () => {
+  const ids = Object.keys(groups).sort();
+  $('#btnBulk').disabled = true; const p = $('#bProg'); p.style.display = 'inline-block';
+  let done = 0, okc = 0;
+  for(const id of ids){
+    const files = groups[id];
+    if(files.length < 4){ logEnroll(id, 'skipped', 'only ' + files.length + ' photo(s); need 4–10'); }
+    else if((await enrollOne(id, files.slice(0,10))).ok) okc++;
+    p.textContent = (++done) + ' / ' + ids.length;
+  }
+  toast('Bulk enroll finished: ' + okc + ' enrolled', okc ? 'ok' : '');
+  $('#btnBulk').disabled = false;
+};
+
+async function classCall(label, fn){
+  const c = $('#cClass').value.trim(); if(!c) return toast('Enter a class ID','bad');
+  try{ const out = await fn(c); $('#cOut').innerHTML = '<h4 style="margin:12px 0 0">'+esc(label)+'</h4>' + chipsHTML(out) + '<pre>'+esc(JSON.stringify(out,null,2))+'</pre>'; }
+  catch(e){ toast(e.message,'bad'); }
+}
+$('#btnCount').onclick = () => classCall('Enrolled count', c => getJ('/face/students/'+enc(c)+'/enrolled-count'));
+$('#btnTrainStatus').onclick = () => classCall('Classifier status', c => getJ('/face/train/'+enc(c)+'/status'));
+$('#btnRetrain').onclick = () => classCall('Retrain result', c => postJ('/face/train/'+enc(c)));
+
+/* ---------- records ---------- */
+let records = [], recTimer = null;
+async function loadRecords(){
+  const q = new URLSearchParams(); q.set('limit', '1000');
+  if($('#rClass').value.trim()) q.set('class_id', $('#rClass').value.trim());
+  if($('#rSessionF').value.trim()) q.set('session_id', $('#rSessionF').value.trim());
+  try{ records = (await getJ('/face/attendance-log?' + q)).records || []; renderRecords(); }
+  catch(e){ $('#recTable').innerHTML = '<div class="empty">'+esc(e.message)+'</div>'; }
+}
+function renderRecords(){
+  const q = $('#rSearch').value.trim().toLowerCase();
+  const rows = q ? records.filter(r => JSON.stringify(r).toLowerCase().includes(q)) : records;
+  const bySrc = {}; rows.forEach(r => bySrc[r.source] = (bySrc[r.source]||0) + 1);
+  $('#rCount').innerHTML = '<span class="chip">'+rows.length+' shown</span>' +
+    Object.entries(bySrc).map(([k,v]) => '<span class="chip">'+esc(k)+': '+v+'</span>').join('');
+  $('#recTable').innerHTML = tableHTML(rows, 'No records.');
+}
+$('#btnLoad').onclick = loadRecords;
+$('#rSearch').oninput = renderRecords;
+$('#rAuto').onchange = e => { clearInterval(recTimer); if(e.target.checked) recTimer = setInterval(loadRecords, 5000); };
+$('#btnCsv').onclick = () => {
+  if(!records.length) return toast('Nothing to export');
+  const cols = Object.keys(records[0]), q = v => '"' + String(v ?? '').replace(/"/g,'""') + '"';
+  const csv = [cols.map(q).join(',')].concat(records.map(r => cols.map(c => q(r[c])).join(','))).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'attendance-' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
+};
+
+$('#nvrUrl').addEventListener('input', e => { if(e.target.value.trim()) $('#sCctv').checked = true; });
+
+/* ---------- full screen for the big feeds ---------- */
+document.querySelectorAll('.fsBtn').forEach(b => b.onclick = () => {
+  const st = b.closest('.stage');
+  if(document.fullscreenElement) document.exitFullscreen(); else st.requestFullscreen && st.requestFullscreen();
+});
+
+/* ---------- boot ---------- */
+ping(); setInterval(ping, 15000);
+</script>
+</body>
+</html>

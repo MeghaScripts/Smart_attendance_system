@@ -1,0 +1,73 @@
+-- Seed for the schema in schema.sql: one class + 60 students (STU001-STU060).
+-- Safe to re-run.
+USE smart_attendance;
+
+INSERT INTO classes (class_id, class_name) VALUES (1, 'CS101')
+ON DUPLICATE KEY UPDATE class_name = VALUES(class_name);
+
+INSERT INTO students
+    (student_id, student_name, class_id, department, semester, section, email)
+VALUES
+('STU001', 'Student 001', 1, 'CSE', 6, 'A', 'student001@example.com'),
+('STU002', 'Student 002', 1, 'CSE', 6, 'A', 'student002@example.com'),
+('STU003', 'Student 003', 1, 'CSE', 6, 'A', 'student003@example.com'),
+('STU004', 'Student 004', 1, 'CSE', 6, 'A', 'student004@example.com'),
+('STU005', 'Student 005', 1, 'CSE', 6, 'A', 'student005@example.com'),
+('STU006', 'Student 006', 1, 'CSE', 6, 'A', 'student006@example.com'),
+('STU007', 'Student 007', 1, 'CSE', 6, 'A', 'student007@example.com'),
+('STU008', 'Student 008', 1, 'CSE', 6, 'A', 'student008@example.com'),
+('STU009', 'Student 009', 1, 'CSE', 6, 'A', 'student009@example.com'),
+('STU010', 'Student 010', 1, 'CSE', 6, 'A', 'student010@example.com'),
+('STU011', 'Student 011', 1, 'CSE', 6, 'A', 'student011@example.com'),
+('STU012', 'Student 012', 1, 'CSE', 6, 'A', 'student012@example.com'),
+('STU013', 'Student 013', 1, 'CSE', 6, 'A', 'student013@example.com'),
+('STU014', 'Student 014', 1, 'CSE', 6, 'A', 'student014@example.com'),
+('STU015', 'Student 015', 1, 'CSE', 6, 'A', 'student015@example.com'),
+('STU016', 'Student 016', 1, 'CSE', 6, 'A', 'student016@example.com'),
+('STU017', 'Student 017', 1, 'CSE', 6, 'A', 'student017@example.com'),
+('STU018', 'Student 018', 1, 'CSE', 6, 'A', 'student018@example.com'),
+('STU019', 'Student 019', 1, 'CSE', 6, 'A', 'student019@example.com'),
+('STU020', 'Student 020', 1, 'CSE', 6, 'A', 'student020@example.com'),
+('STU021', 'Student 021', 1, 'CSE', 6, 'A', 'student021@example.com'),
+('STU022', 'Student 022', 1, 'CSE', 6, 'A', 'student022@example.com'),
+('STU023', 'Student 023', 1, 'CSE', 6, 'A', 'student023@example.com'),
+('STU024', 'Student 024', 1, 'CSE', 6, 'A', 'student024@example.com'),
+('STU025', 'Student 025', 1, 'CSE', 6, 'A', 'student025@example.com'),
+('STU026', 'Student 026', 1, 'CSE', 6, 'A', 'student026@example.com'),
+('STU027', 'Student 027', 1, 'CSE', 6, 'A', 'student027@example.com'),
+('STU028', 'Student 028', 1, 'CSE', 6, 'A', 'student028@example.com'),
+('STU029', 'Student 029', 1, 'CSE', 6, 'A', 'student029@example.com'),
+('STU030', 'Student 030', 1, 'CSE', 6, 'A', 'student030@example.com'),
+('STU031', 'Student 031', 1, 'CSE', 6, 'A', 'student031@example.com'),
+('STU032', 'Student 032', 1, 'CSE', 6, 'A', 'student032@example.com'),
+('STU033', 'Student 033', 1, 'CSE', 6, 'A', 'student033@example.com'),
+('STU034', 'Student 034', 1, 'CSE', 6, 'A', 'student034@example.com'),
+('STU035', 'Student 035', 1, 'CSE', 6, 'A', 'student035@example.com'),
+('STU036', 'Student 036', 1, 'CSE', 6, 'A', 'student036@example.com'),
+('STU037', 'Student 037', 1, 'CSE', 6, 'A', 'student037@example.com'),
+('STU038', 'Student 038', 1, 'CSE', 6, 'A', 'student038@example.com'),
+('STU039', 'Student 039', 1, 'CSE', 6, 'A', 'student039@example.com'),
+('STU040', 'Student 040', 1, 'CSE', 6, 'A', 'student040@example.com'),
+('STU041', 'Student 041', 1, 'CSE', 6, 'A', 'student041@example.com'),
+('STU042', 'Student 042', 1, 'CSE', 6, 'A', 'student042@example.com'),
+('STU043', 'Student 043', 1, 'CSE', 6, 'A', 'student043@example.com'),
+('STU044', 'Student 044', 1, 'CSE', 6, 'A', 'student044@example.com'),
+('STU045', 'Student 045', 1, 'CSE', 6, 'A', 'student045@example.com'),
+('STU046', 'Student 046', 1, 'CSE', 6, 'A', 'student046@example.com'),
+('STU047', 'Student 047', 1, 'CSE', 6, 'A', 'student047@example.com'),
+('STU048', 'Student 048', 1, 'CSE', 6, 'A', 'student048@example.com'),
+('STU049', 'Student 049', 1, 'CSE', 6, 'A', 'student049@example.com'),
+('STU050', 'Student 050', 1, 'CSE', 6, 'A', 'student050@example.com'),
+('STU051', 'Student 051', 1, 'CSE', 6, 'A', 'student051@example.com'),
+('STU052', 'Student 052', 1, 'CSE', 6, 'A', 'student052@example.com'),
+('STU053', 'Student 053', 1, 'CSE', 6, 'A', 'student053@example.com'),
+('STU054', 'Student 054', 1, 'CSE', 6, 'A', 'student054@example.com'),
+('STU055', 'Student 055', 1, 'CSE', 6, 'A', 'student055@example.com'),
+('STU056', 'Student 056', 1, 'CSE', 6, 'A', 'student056@example.com'),
+('STU057', 'Student 057', 1, 'CSE', 6, 'A', 'student057@example.com'),
+('STU058', 'Student 058', 1, 'CSE', 6, 'A', 'student058@example.com'),
+('STU059', 'Student 059', 1, 'CSE', 6, 'A', 'student059@example.com'),
+('STU060', 'Student 060', 1, 'CSE', 6, 'A', 'student060@example.com')
+ON DUPLICATE KEY UPDATE
+    student_name = VALUES(student_name),
+    class_id     = VALUES(class_id);

@@ -1,0 +1,75 @@
+-- ============================================================================
+-- Seed students STU003-STU060 (58 rows) to bring total to 60.
+-- Matches the LIVE schema: id, student_id, enrollment_number, student_name,
+-- department, semester, section, class_id, created_at, email, phone.
+-- Safe to re-run — uses INSERT ... ON DUPLICATE KEY UPDATE.
+-- ============================================================================
+
+USE smart_attendance;
+
+INSERT INTO students
+    (student_id, enrollment_number, student_name, department, semester, section, class_id, email, phone)
+VALUES
+('STU003', '21CS003', 'Student 003', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU004', '21CS004', 'Student 004', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU005', '21CS005', 'Student 005', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU006', '21CS006', 'Student 006', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU007', '21CS007', 'Student 007', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU008', '21CS008', 'Student 008', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU009', '21CS009', 'Student 009', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU010', '21CS010', 'Student 010', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU011', '21CS011', 'Student 011', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU012', '21CS012', 'Student 012', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU013', '21CS013', 'Student 013', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU014', '21CS014', 'Student 014', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU015', '21CS015', 'Student 015', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU016', '21CS016', 'Student 016', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU017', '21CS017', 'Student 017', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU018', '21CS018', 'Student 018', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU019', '21CS019', 'Student 019', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU020', '21CS020', 'Student 020', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU021', '21CS021', 'Student 021', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU022', '21CS022', 'Student 022', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU023', '21CS023', 'Student 023', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU024', '21CS024', 'Student 024', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU025', '21CS025', 'Student 025', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU026', '21CS026', 'Student 026', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU027', '21CS027', 'Student 027', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU028', '21CS028', 'Student 028', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU029', '21CS029', 'Student 029', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU030', '21CS030', 'Student 030', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU031', '21CS031', 'Student 031', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU032', '21CS032', 'Student 032', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU033', '21CS033', 'Student 033', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU034', '21CS034', 'Student 034', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU035', '21CS035', 'Student 035', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU036', '21CS036', 'Student 036', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU037', '21CS037', 'Student 037', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU038', '21CS038', 'Student 038', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU039', '21CS039', 'Student 039', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU040', '21CS040', 'Student 040', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU041', '21CS041', 'Student 041', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU042', '21CS042', 'Student 042', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU043', '21CS043', 'Student 043', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU044', '21CS044', 'Student 044', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU045', '21CS045', 'Student 045', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU046', '21CS046', 'Student 046', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU047', '21CS047', 'Student 047', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU048', '21CS048', 'Student 048', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU049', '21CS049', 'Student 049', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU050', '21CS050', 'Student 050', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU051', '21CS051', 'Student 051', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU052', '21CS052', 'Student 052', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU053', '21CS053', 'Student 053', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU054', '21CS054', 'Student 054', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU055', '21CS055', 'Student 055', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU056', '21CS056', 'Student 056', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU057', '21CS057', 'Student 057', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU058', '21CS058', 'Student 058', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU059', '21CS059', 'Student 059', 'CSE', 6, 'A', 'CS101', '', NULL),
+('STU060', '21CS060', 'Student 060', 'CSE', 6, 'A', 'CS101', '', NULL)
+ON DUPLICATE KEY UPDATE
+    student_name = VALUES(student_name),
+    department   = VALUES(department),
+    semester     = VALUES(semester),
+    section      = VALUES(section);

@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+.env
+face_data/embeddings/
+face_data/classifiers/

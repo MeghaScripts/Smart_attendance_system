@@ -1,0 +1,8 @@
+cd Face_regnition_Module_Smart_Attendance_sytem-main
+venv\Scripts\activate
+python main.py
+
+
+cd Face_regnition_Module_Smart_Attendance_sytem-main
+venv\Scripts\activate
+python stub_backend.py

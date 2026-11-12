@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attendance Review</title>
+<style>
+  :root { --bg:#f2d9c5; --bg2:#f9e8da; --card:#fff8f2; --text:#3a1822; --muted:#8a6468; --line:#e7cbb6;
+          --ok:#2f7d4f; --bad:#c0352b; --blue:#7b1e3a; --brand2:#5a1228; --brand3:#923050; --gold:#c9985c;
+          --warn:#a8650f; --warnbg:#fbe7c6; --chip:#f5ddcc; --shadow:0 1px 2px rgba(90,18,40,.08),0 8px 24px rgba(90,18,40,.10); }
+  * { box-sizing: border-box; }
+  html { background:var(--bg); }
+  body { margin:0; font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--text); min-height:100vh;
+         background:radial-gradient(1200px 500px at 85% -10%,#fbefe4 0,transparent 60%),linear-gradient(180deg,var(--bg2),var(--bg)) fixed; }
+  h1,h2,.name { font-family:Georgia,"Times New Roman",serif; }
+  header { padding:14px 24px; background:linear-gradient(135deg,var(--brand2),var(--blue) 55%,var(--brand3)); color:#fff4ea;
+           display:flex; flex-wrap:wrap; gap:10px; align-items:center; position:sticky; top:0; z-index:20;
+           border-bottom:3px solid var(--gold); box-shadow:0 4px 18px rgba(90,18,40,.35); }
+  header h1 { font-size:21px; margin:0 14px 0 0; display:flex; align-items:center; gap:10px; }
+  header h1 svg { width:30px; height:30px; }
+  header input, header select { padding:9px 12px; border:1px solid rgba(255,244,234,.35); border-radius:10px; background:#fff8f2; color:var(--text); max-width:100%; font:inherit; }
+  input, select { padding:8px 10px; border:1px solid var(--line); border-radius:10px; background:#fffdfb; color:var(--text); max-width:100%; font:inherit; }
+  input:focus, select:focus { outline:2px solid var(--blue); outline-offset:-1px; }
+  button { padding:9px 15px; border:0; border-radius:10px; cursor:pointer; font:inherit; font-weight:700; color:#fff4ea;
+           background:linear-gradient(180deg,var(--brand3),var(--blue)); box-shadow:0 2px 6px rgba(90,18,40,.25); transition:.15s; }
+  button:hover { filter:brightness(1.1); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  button.ok { background:linear-gradient(180deg,#3d9a63,var(--ok)); } button.bad { background:linear-gradient(180deg,#d4483c,var(--bad)); }
+  button.ghost { background:transparent; color:var(--blue); border:1.5px solid var(--blue); box-shadow:none; }
+  button.ghost:hover { background:var(--chip); }
+  header button.ghost { color:#fff4ea; border-color:rgba(255,244,234,.6); }
+  header button.ghost:hover { background:rgba(255,244,234,.15); }
+  #status { color:rgba(255,244,234,.85); font-size:13px; margin-left:auto; font-weight:600; }
+  #scanMsg { font-size:13px; color:rgba(255,244,234,.85); }
+
+  /* CCTV big view */
+  #cctvWrap { display:none; margin:20px 24px 0; background:var(--card); border:1px solid var(--line); border-radius:20px; padding:16px; box-shadow:var(--shadow); }
+  #cctvWrap .head { display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+  #cctvWrap h2 { margin:0; font-size:20px; color:var(--brand2); }
+  #cctvWrap .sp { flex:1; }
+  #cctvStage { position:relative; background:#1f0a11; border:3px solid var(--brand2); border-radius:14px; overflow:hidden;
+               aspect-ratio:16/9; max-height:70vh; margin:0 auto; box-shadow:inset 0 0 40px rgba(0,0,0,.5); }
+  #cctvStage img { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; display:block; }
+  #cctvStage .ph { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; color:#e9c9b4; padding:20px; }
+  #cctvStage:fullscreen { max-height:none; aspect-ratio:auto; width:100vw; height:100vh; border:0; border-radius:0; }
+
+  main { padding:20px 0 0; display:grid; gap:18px; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:var(--shadow); transition:.15s; }
+  .card:hover { transform:translateY(-2px); }
+  .card img { width:100%; aspect-ratio:1/1; object-fit:cover; background:#1f0a11; display:block; border-bottom:3px solid var(--gold); }
+  .body { padding:14px; }
+  .badge { display:inline-block; font-size:11px; font-weight:800; padding:3px 10px; border-radius:99px; background:var(--warnbg); color:var(--warn); margin-bottom:6px; }
+  .name { font-weight:700; font-size:16px; color:var(--brand2); }
+  .meta { color:var(--muted); font-size:12px; margin:4px 0 10px; }
+  .src { display:inline-block; font-size:11px; font-weight:800; padding:3px 10px; border-radius:99px; background:var(--blue); color:#fff4ea; margin:0 0 6px 6px; text-transform:uppercase; }
+  .cand { display:flex; gap:6px; align-items:center; margin-top:6px; }
+  .cand .who { flex:1; min-width:0; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cand .who small { color:var(--muted); }
+  .cand button { flex:0 0 auto; font-size:13px; }
+  .row { display:flex; gap:6px; margin-top:6px; }
+  .row > * { flex:1; min-width:0; font-size:13px; }
+  .layout { display:flex; gap:20px; align-items:flex-start; padding:0 24px 40px; }
+  .layout main { padding:20px 0 0; flex:1; min-width:0; }
+  #roster { flex:0 0 370px; position:sticky; top:84px; max-height:calc(100vh - 100px); display:flex; flex-direction:column; margin-top:20px;
+            background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px; box-shadow:var(--shadow); }
+  #roster h2 { font-size:18px; margin:0 0 8px; color:var(--brand2); }
+  #roster .pills { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+  #roster .tools { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 8px; align-items:center; }
+  #roster .tools button { padding:5px 14px; font-size:12px; }
+  #roster .tools button.on { background:var(--blue); color:#fff4ea; border-color:var(--blue); }
+  #roster .tools input { flex:1 1 100%; }
+  #rosterList { overflow:auto; flex:1; border-top:1px solid var(--line); }
+  .stu { display:flex; align-items:flex-start; gap:8px; padding:8px 4px; font-size:13px; border-bottom:1px solid var(--line); }
+  .stu .no { width:24px; color:var(--muted); font-size:12px; text-align:right; flex:0 0 auto; }
+  .stu .n { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; font-weight:600; }
+  .stu .n small { color:var(--muted); font-weight:500; }
+  .stu .act { display:block; margin-top:4px; padding:2px 10px; font-size:11px; font-weight:700; border-radius:6px; cursor:pointer;
+              background:transparent; color:var(--text); border:1px solid var(--line); box-shadow:none; }
+  .stu .act:hover { border-color:var(--blue); color:var(--blue); background:var(--chip); }
+  .stu .act.warn:hover { border-color:var(--bad); color:var(--bad); }
+  #scanInfo { font-size:12px; color:var(--muted); margin:0 0 8px; line-height:1.5; }
+  #scanInfo b { color:var(--text); }
+  .stu .meta { display:block; font-size:11px; color:var(--muted); white-space:normal; font-weight:500; margin:2px 0 0; }
+  .stu.confirming .st { background:var(--warnbg); color:var(--warn); }
+  .stu .st { margin-top:1px; flex:0 0 auto; font-size:12px; font-weight:800; padding:3px 10px; border-radius:99px; }
+  .stu.present .st { background:rgba(47,125,79,.16); color:var(--ok); }
+  .stu.absent  .st { background:rgba(192,53,43,.13); color:var(--bad); }
+  .pill { font-weight:800; font-size:12px; padding:3px 10px; border-radius:99px; background:var(--chip); }
+  .pill.p { color:var(--ok); } .pill.a { color:var(--bad); } .pill.c { color:var(--warn); }
+  @media (max-width: 900px) { .layout { flex-direction:column; padding:0 14px 30px; } #roster { position:static; flex:none; width:100%; max-height:420px; order:-1; }
+                              #cctvWrap { margin:16px 14px 0; } header { padding:12px 14px; } }
+  #marked { margin:20px 24px 0; padding:12px 16px; border-radius:12px; background:var(--warnbg); color:var(--warn); border:1px solid var(--warn);
+            font-size:13px; display:none; }
+  #marked b { display:block; margin-bottom:4px; }
+  #marked span { display:block; margin:2px 0; }
+  .cand .meta { display:block; font-size:11px; color:var(--muted); }
+  .note { font-size:12px; color:var(--warn); margin-top:6px; font-weight:600; }
+  .empty { grid-column:1/-1; text-align:center; color:var(--muted); padding:40px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#fff4ea"/><circle cx="16" cy="16" r="9" fill="#7b1e3a"/><circle cx="16" cy="16" r="4.5" fill="#c9985c"/><circle cx="18.2" cy="13.8" r="1.5" fill="#fff4ea"/></svg>Attendance Review</h1>
+  <input id="session" list="sessions" placeholder="Session ID">
+  <datalist id="sessions"></datalist>
+  <input id="reviewer" placeholder="Your teacher ID">
+  <select id="filter">
+    <option value="all">All faces</option>
+    <option value="rejected">Rejected by quality gate</option>
+    <option value="low_quality">Low quality</option>
+    <option value="unmatched">Unmatched</option>
+    <option value="ambiguous">Confused between students</option>
+    <option value="model_disagree">SVM and distance disagree</option>
+    <option value="liveness">Liveness failed</option>
+  </select>
+  <button id="load">Load</button>
+  <button id="scan" class="ghost" title="Send the current CCTV frame for recognition right now">Scan CCTV now</button>
+  <button id="cctvToggle" class="ghost" title="Show the CCTV camera feed">🎥 CCTV view</button>
+  <span id="scanMsg"></span>
+  <span id="status"></span>
+</header>
+
+<div id="cctvWrap">
+  <div class="head">
+    <h2>🎥 CCTV camera</h2><span class="sp"></span>
+    <button id="cctvSnap" class="ghost">Snapshot</button>
+    <button id="cctvLive" class="ghost">Live stream</button>
+    <button id="cctvFs" class="ghost">⛶ Full screen</button>
+  </div>
+  <div id="cctvStage">
+    <img id="cctvImg" alt="" style="display:none">
+    <div id="cctvPh" class="ph">Load a running session, then press Snapshot or Live stream.</div>
+  </div>
+</div>
+
+<div id="marked"></div>
+<div class="layout">
+<main id="grid"><div class="empty">Pick a session and press Load.</div></main>
+<aside id="roster">
+  <h2>Class attendance</h2>
+  <div class="pills"><span class="pill p" id="rsPresent"></span><span class="pill c" id="rsConfirm" style="display:none"></span><span class="pill a" id="rsAbsent"></span></div>
+  <div id="scanInfo"></div>
+  <div class="tools">
+    <button class="ghost on" data-f="all">All</button>
+    <button class="ghost" data-f="absent">Absent</button>
+    <button class="ghost" data-f="present">Present</button>
+    <input id="rsSearch" placeholder="Search name / ID">
+  </div>
+  <div id="rosterList"><div class="empty">Load a session to see students.</div></div>
+</aside>
+</div>
+
+<script>
+const BASE = "";   // same origin as the face module
+const $ = id => document.getElementById(id);
+const REASON = {
+  too_blurry:   ["Rejected: too blurry", "rejected"],
+  too_small:    ["Rejected: too small", "rejected"],
+  extreme_angle:["Rejected: extreme angle", "rejected"],
+  low_det_conf: ["Rejected: weak detection", "rejected"],
+  low_quality:  ["Low quality", "low_quality"],
+  unmatched:    ["Unmatched", "unmatched"],
+  ambiguous:    ["Confused between students", "ambiguous"],
+  model_disagree: ["SVM and distance disagree", "model_disagree"],
+  liveness:     ["Liveness check failed", "liveness"]
+};
+const SOURCE = { webcam: "Webcam", cctv: "CCTV", photo: "Group photo" };
+let timer = null, lastData = null, roster = null, rosterFilter = "all";
+
+function setStatus(t) { $("status").textContent = t; }
+
+async function loadSessions() {
+  try {
+    const r = await fetch(`${BASE}/face/review/sessions`);
+    const d = await r.json();
+    const dl = $("sessions"); dl.innerHTML = "";
+    (d.sessions || []).forEach(s => {
+      const o = document.createElement("option");
+      o.value = s.session_id; o.label = "class " + s.class_id;
+      dl.appendChild(o);
+    });
+    if (!$("session").value && (d.sessions || []).length) {
+      $("session").value = d.sessions[0].session_id;
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+async function load() {
+  const sid = $("session").value.trim();
+  if (!sid) { setStatus("Enter a session ID"); return; }
+  try {
+    const r = await fetch(`${BASE}/face/review/pending?session_id=${encodeURIComponent(sid)}`);
+    lastData = await r.json();
+    if (lastData.roster) { roster = lastData.roster; renderRoster(); }   // comes with the same response
+    else await loadRoster(sid);                                          // older backend: separate call
+    render();
+    setStatus(`${lastData.count || 0} pending · ${new Date().toLocaleTimeString()}`);
+  } catch (e) { setStatus("Could not reach server"); }
+}
+
+function visible(items) {
+  const f = $("filter").value;
+  if (f === "all") return items;
+  return items.filter(it => (REASON[it.reason] || ["", "low_quality"])[1] === f);
+}
+
+async function loadRoster(sid) {
+  try {
+    const r = await fetch(`${BASE}/face/review/roster?session_id=${encodeURIComponent(sid)}`);
+    if (!r.ok) {
+      roster = { students: [], total: 0, present: 0, absent: 0,
+        error: r.status === 404
+          ? "The server is running an old services/review_service.py. Replace it with the new one and restart the Python server."
+          : "Roster request failed (HTTP " + r.status + ")" };
+    } else {
+      roster = await r.json();
+    }
+  } catch (e) { roster = null; }
+  renderRoster();
+}
+
+async function setAttendance(stu, status) {
+  const sid = $("session").value.trim();
+  if (!sid) { setStatus("Enter a session ID"); return; }
+  const name = (stu.student_name || stu.student_id) + " (" + stu.student_id + ")";
+  if (status === "absent" && !confirm("Mark " + name + " as ABSENT?\nThe camera will not mark them present again unless you do it here.")) return;
+  const reviewer = $("reviewer").value.trim() || null;
+  try {
+    const r = await fetch(`${BASE}/face/review/attendance`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sid, student_id: stu.student_id, status, reviewer })
+    });
+    const d = await r.json();
+    setStatus(r.ok ? (d.warning || (name + " marked " + status)) : (d.error || "Failed"));
+    await load();
+  } catch (e) { setStatus("Request failed"); }
+}
+
+function renderScan() {
+  const box = $("scanInfo"), sc = (roster && roster.scans) || {};
+  box.innerHTML = "";
+  Object.entries(sc).forEach(([src, v]) => {
+    const t = new Date(v.at * 1000).toLocaleTimeString();
+    const line = el("div", "");
+    line.appendChild(el("b", "", (SOURCE[src] || src) + " last scan " + t + ": "));
+    line.appendChild(document.createTextNode(
+      v.faces + " faces · " + v.matched + " recognised · " + v.sent_to_review + " sent to review" +
+      (v.already_marked ? " · " + v.already_marked + " already marked" : "")));
+    box.appendChild(line);
+  });
+}
+
+function renderRoster() {
+  renderScan();
+  const list = $("rosterList");
+  list.innerHTML = "";
+  const all = (roster && roster.students) || [];
+  $("rsPresent").textContent = "Present " + (roster ? roster.present : 0) + " / " + (roster ? roster.total : 0);
+  $("rsAbsent").textContent = "Absent " + (roster ? roster.absent : 0);
+  const nConf = roster ? (roster.confirming || 0) : 0;
+  $("rsConfirm").style.display = nConf ? "" : "none";
+  $("rsConfirm").textContent = "Confirming " + nConf;
+  const q = $("rsSearch").value.trim().toLowerCase();
+  const rows = all.filter(s =>
+    (rosterFilter === "all" || (rosterFilter === "present") === !!s.present) &&
+    (!q || (s.student_name + " " + s.student_id).toLowerCase().includes(q)));
+  if (!rows.length) {
+    const msg = all.length ? "No students match."
+      : (roster && roster.error) ? roster.error
+      : "No enrolled students found for this class.";
+    list.appendChild(el("div", "empty", msg));
+    return;
+  }
+  rows.forEach((s, i) => {
+    const conf = !s.present && s.confirming > 0;
+    const d = el("div", "stu " + (s.present ? "present" : conf ? "confirming" : "absent"));
+    d.appendChild(el("span", "no", String(i + 1)));
+    const n = el("span", "n", s.student_name + " ");
+    n.appendChild(el("small", "", s.student_id));
+    let meta = "";
+    if (s.present) {
+      const how = s.source === "review" ? "Confirmed by teacher"
+        : s.source === "manual" ? "Set present by teacher"
+        : s.source ? "Auto · " + (SOURCE[s.source] || s.source) : "";
+      meta = [how, s.at ? new Date(s.at * 1000).toLocaleTimeString() : ""].filter(Boolean).join(" · ");
+    } else if (s.locked_absent) {
+      meta = "Set absent by teacher (camera won't change it)";
+    } else if (conf) {
+      meta = "Recognised, waiting for another matching frame";
+    }
+    if (meta) n.appendChild(el("span", "meta", meta));
+    // manual control: present -> absent, absent -> present
+    const act = el("button", "act" + (s.present ? " warn" : ""), s.present ? "Mark absent" : "Mark present");
+    act.onclick = () => setAttendance(s, s.present ? "absent" : "present");
+    n.appendChild(act);
+    d.appendChild(n);
+    d.appendChild(el("span", "st", s.present ? "Present" : conf ? "Confirming " + s.confirming + "/" + s.needed : "Absent"));
+    list.appendChild(d);
+  });
+  if (roster && !roster.active && all.length)
+    list.appendChild(el("div", "empty", "Session is not active — present/absent is only tracked while it runs."));
+}
+
+async function scanNow() {
+  const cls = roster && roster.class_id;
+  const msg = $("scanMsg"), b = $("scan");
+  if (!cls) { msg.textContent = "Load a running session first"; return; }
+  b.disabled = true; msg.textContent = "Scanning the CCTV frame… (can take a few seconds)";
+  try {
+    const r = await fetch(`${BASE}/face/cctv/process-now/${encodeURIComponent(cls)}`, { method: "POST" });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.error) {
+      msg.textContent = d.error || d.detail || ("Scan failed (HTTP " + r.status + ")");
+    } else {
+      msg.textContent = "Scanned " + new Date().toLocaleTimeString() + ": " + (d.faces_detected || 0) + " faces · "
+        + (d.new_recognitions || []).length + " newly marked · " + (d.sent_to_review || 0) + " sent to review";
+    }
+    await load();
+  } catch (e) {
+    msg.textContent = "Could not reach the server";
+  } finally { b.disabled = false; }
+}
+
+function renderMarked() {
+  const box = $("marked"), list = (lastData && lastData.already_marked) || [];
+  box.innerHTML = "";
+  if (!list.length) { box.style.display = "none"; return; }
+  box.style.display = "block";
+  box.appendChild(el("b", "", "Already marked present — not recognised again"));
+  list.forEach(a => {
+    const t = new Date(a.last_seen * 1000).toLocaleTimeString();
+    box.appendChild(el("span", "", "✓ " + (a.student_name || a.student_id) + " (" + a.student_id + ") — seen again "
+      + a.count + "x" + (a.source ? " via " + (SOURCE[a.source] || a.source) : "") + ", last " + t));
+  });
+}
+
+function render() {
+  renderMarked();
+  const grid = $("grid");
+  grid.innerHTML = "";
+  const items = visible((lastData && lastData.items) || []);
+  if (!items.length) {
+    const d = document.createElement("div");
+    d.className = "empty";
+    d.textContent = "Nothing to review right now.";
+    grid.appendChild(d);
+    return;
+  }
+  items.forEach(it => grid.appendChild(card(it, lastData.students || [])));
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function btn(label, cls, fn) {
+  const b = el("button", cls, label);
+  b.onclick = fn;
+  return b;
+}
+
+function viaText(cd) {
+  const p = cd.svm_p != null ? " " + Math.round(cd.svm_p * 100) + "%" : "";
+  if (cd.via === "svm") return "SVM pick" + p + " · face distance too far";
+  if (cd.via === "both") return "SVM pick" + p + " · also closest by distance";
+  if (cd.via === "cosine") return "closest by face distance";
+  return "";
+}
+
+function card(it, students) {
+  const c = el("div", "card");
+  const img = el("img"); img.src = BASE + it.image_url; img.alt = "Detected face";
+  c.appendChild(img);
+
+  const body = el("div", "body");
+  body.appendChild(el("span", "badge", (REASON[it.reason] || [it.reason])[0]));
+  if (it.source) body.appendChild(el("span", "src", SOURCE[it.source] || it.source));
+
+  const cands = it.candidates || [];
+  let title = "Who is this?";
+  if (cands.length > 1) title = "Could be one of " + cands.length + " students";
+  else if (cands.length === 1) title = "Suggested: " + (cands[0].student_name || cands[0].student_id);
+  body.appendChild(el("div", "name", title));
+
+  const bits = [];
+  if (it.distance != null) bits.push("distance " + Number(it.distance).toFixed(2));
+  if (it.blur != null) bits.push("blur " + Math.round(it.blur));
+  if (it.width != null) bits.push(it.width + "px");
+  if (it.seen > 1) bits.push("seen " + it.seen + "x");
+  body.appendChild(el("div", "meta", bits.join(" · ")));
+  if (cands.length === 1 && viaText(cands[0])) body.appendChild(el("div", "note", viaText(cands[0])));
+
+  (it.already_marked_similar || []).forEach(m =>
+    body.appendChild(el("div", "note", "Also looks like " + (m.student_name || m.student_id) + " — already marked present")));
+
+  if (cands.length > 1) {
+    // model is torn between students: one confirm button per candidate
+    cands.forEach(cd => {
+      const r = el("div", "cand");
+      const who = el("div", "who", (cd.student_name || cd.student_id) + " ");
+      who.appendChild(el("small", "", "(" + cd.student_id + ", d=" + Number(cd.distance).toFixed(2) + ")"));
+      const how = viaText(cd);
+      if (how) who.appendChild(el("div", "meta", how));
+      r.appendChild(who);
+      r.appendChild(btn("This one", "ok", () => decide(it.id, "reassign", cd.student_id)));
+      body.appendChild(r);
+    });
+    const row1 = el("div", "row");
+    row1.appendChild(btn("None of them", "bad", () => decide(it.id, "reject")));
+    body.appendChild(row1);
+  } else {
+    const row1 = el("div", "row");
+    if (cands.length === 1) {
+      row1.appendChild(btn("Confirm", "ok", () => decide(it.id, "confirm")));
+      row1.appendChild(btn("Not them", "bad", () => decide(it.id, "reject")));
+    } else {
+      row1.appendChild(btn("Dismiss", "bad", () => decide(it.id, "reject")));
+    }
+    body.appendChild(row1);
+  }
+
+  const row2 = el("div", "row");
+  const sel = el("select");
+  const first = el("option", "", "Assign to…"); first.value = "";
+  sel.appendChild(first);
+  // students who are still absent first; already-present ones are labelled
+  const presentSet = new Set(((roster && roster.students) || []).filter(x => x.present).map(x => String(x.student_id)));
+  const ordered = [...students].sort((a, b) => presentSet.has(String(a.student_id)) - presentSet.has(String(b.student_id)));
+  ordered.forEach(s => {
+    const o = el("option", "", (s.student_name || s.student_id) + " (" + s.student_id + ")" +
+      (presentSet.has(String(s.student_id)) ? "  ✓ present" : ""));
+    o.value = s.student_id;
+    sel.appendChild(o);
+  });
+  row2.appendChild(sel);
+  row2.appendChild(btn("Assign", "ghost", () => {
+    if (!sel.value) { setStatus("Pick a student first"); return; }
+    decide(it.id, "reassign", sel.value);
+  }));
+  body.appendChild(row2);
+
+  c.appendChild(body);
+  return c;
+}
+
+async function decide(id, action, studentId) {
+  const reviewer = $("reviewer").value.trim() || null;
+  try {
+    const r = await fetch(`${BASE}/face/review/${id}/decide`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, student_id: studentId, reviewer })
+    });
+    const d = await r.json();
+    setStatus(r.ok ? "Saved" : (d.error || "Failed"));
+    await load();
+  } catch (e) { setStatus("Request failed"); }
+}
+
+function start() {
+  load();
+  clearInterval(timer);
+  timer = setInterval(load, 4000);
+}
+
+$("load").onclick = start;
+$("filter").onchange = render;
+$("rsSearch").oninput = renderRoster;
+$("scan").onclick = scanNow;
+document.querySelectorAll("#roster .tools button").forEach(b => b.onclick = () => {
+  rosterFilter = b.dataset.f;
+  document.querySelectorAll("#roster .tools button").forEach(x => x.classList.toggle("on", x === b));
+  renderRoster();
+});
+/* ---------- big CCTV view (optional) ---------- */
+function cctvClassId(){ return roster && roster.class_id; }
+function cctvShow(src){
+  const i = $("cctvImg"), ph = $("cctvPh");
+  i.onerror = () => { i.style.display = "none"; ph.style.display = "flex"; ph.textContent = "No frame available (is a CCTV session running for this class?)."; };
+  i.onload = () => { ph.style.display = "none"; i.style.display = "block"; };
+  i.src = src;
+}
+function cctvStopLive(){ const i = $("cctvImg"); if (i.dataset.live) { i.removeAttribute("src"); delete i.dataset.live; $("cctvLive").textContent = "Live stream"; } }
+$("cctvToggle").onclick = () => {
+  const w = $("cctvWrap"), open = w.style.display !== "block";
+  w.style.display = open ? "block" : "none";
+  if (!open) cctvStopLive();
+};
+$("cctvSnap").onclick = () => {
+  const c = cctvClassId(); if (!c) { setStatus("Load a running session first"); return; }
+  cctvStopLive(); cctvShow(`${BASE}/face/cctv/snapshot/${encodeURIComponent(c)}?t=${Date.now()}`);
+};
+$("cctvLive").onclick = () => {
+  const c = cctvClassId(), i = $("cctvImg"); if (!c) { setStatus("Load a running session first"); return; }
+  if (i.dataset.live) { cctvStopLive(); return; }
+  i.dataset.live = "1"; $("cctvLive").textContent = "Stop live";
+  cctvShow(`${BASE}/face/cctv/stream/${encodeURIComponent(c)}`);
+};
+$("cctvFs").onclick = () => {
+  const st = $("cctvStage");
+  if (document.fullscreenElement) document.exitFullscreen(); else if (st.requestFullscreen) st.requestFullscreen();
+};
+
+loadSessions().then(found => { if (found) start(); });
+</script>
+</body>
+</html>
